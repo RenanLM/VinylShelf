@@ -1,0 +1,22 @@
+
+# macOS
+.DS_Store
+
+# Swift Package Manager
+**/.build/
+**/.swiftpm/
+**/Packages/
+
+# Xcode
+**/xcuserdata/
+**/DerivedData/
+*.xcuserstate
+
+# SwiftPM credentials
+.netrc
+
+# Local configuration
+.env
+.env.*
+!.env.example
+/AGENTS.md
