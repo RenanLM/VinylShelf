@@ -12,6 +12,9 @@
 **/DerivedData/
 *.xcuserstate
 
+# XcodeGen generated project
+*.xcodeproj/
+
 # SwiftPM credentials
 .netrc
 
