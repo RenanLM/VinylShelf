@@ -37,3 +37,14 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/VinylShelfDerivedData" \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+      - name: Test iOS application
+        run: |
+          xcodebuild \
+            -project VinylShelf.xcodeproj \
+            -scheme VinylShelf \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+            -derivedDataPath "$RUNNER_TEMP/VinylShelfDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            test

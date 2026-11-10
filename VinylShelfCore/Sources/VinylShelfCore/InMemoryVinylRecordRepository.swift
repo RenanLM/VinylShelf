@@ -10,6 +10,16 @@ public actor InMemoryVinylRecordRepository: VinylRecordRepository {
 
     public init() {}
 
+    public init(records: [VinylRecord]) throws {
+        for record in records {
+            guard recordsByID[record.id] == nil else {
+                throw InMemoryVinylRecordRepositoryError.duplicateID(record.id)
+            }
+
+            recordsByID[record.id] = record
+        }
+    }
+
     public func fetchAll() async throws -> [VinylRecord] {
         Array(recordsByID.values)
     }

@@ -4,6 +4,44 @@ import VinylShelfCore
 
 @Suite("InMemoryVinylRecordRepository")
 struct InMemoryVinylRecordRepositoryTests {
+    @Test("Initializes with records")
+    func initializesWithRecords() async throws {
+        let record = VinylRecord(
+            title: "Elis & Tom",
+            artist: "Elis Regina & Tom Jobim",
+            releaseYear: 1974,
+            genre: "MPB"
+        )
+        let repository = try InMemoryVinylRecordRepository(records: [record])
+
+        let storedRecord = try await repository.fetch(id: record.id)
+
+        #expect(storedRecord == record)
+    }
+
+    @Test("Rejects duplicate identifiers during initialization")
+    func rejectsDuplicateIdentifiersDuringInitialization() {
+        let id = UUID()
+        let firstRecord = VinylRecord(
+            id: id,
+            title: "Elis",
+            artist: "Elis Regina"
+        )
+        let duplicateRecord = VinylRecord(
+            id: id,
+            title: "Falso Brilhante",
+            artist: "Elis Regina"
+        )
+
+        #expect(
+            throws: InMemoryVinylRecordRepositoryError.duplicateID(id)
+        ) {
+            try InMemoryVinylRecordRepository(
+                records: [firstRecord, duplicateRecord]
+            )
+        }
+    }
+
     @Test("An empty repository returns no records")
     func emptyRepositoryReturnsNoRecords() async throws {
         let repository = InMemoryVinylRecordRepository()
