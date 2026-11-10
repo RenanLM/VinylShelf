@@ -64,6 +64,37 @@ struct VinylCatalogViewModelTests {
         }
     }
 
+    @Test("Deletes a record and shows the empty state")
+    @MainActor
+    func deletesRecordAndShowsEmptyState() async throws {
+        let record = VinylRecord(title: "Luz", artist: "Djavan")
+        let repository = try InMemoryVinylRecordRepository(records: [record])
+        let viewModel = VinylCatalogViewModel(repository: repository)
+        await viewModel.load()
+
+        try await viewModel.delete(record)
+
+        #expect(viewModel.state == .empty)
+        #expect(viewModel.isDeleting == false)
+        #expect(try await repository.fetch(id: record.id) == nil)
+    }
+
+    @Test("Keeps the record when deletion fails")
+    @MainActor
+    func keepsRecordWhenDeletionFails() async {
+        let record = VinylRecord(title: "Transa", artist: "Caetano Veloso")
+        let repository = RemoveFailingVinylRecordRepository(record: record)
+        let viewModel = VinylCatalogViewModel(repository: repository)
+        await viewModel.load()
+
+        await #expect(throws: RepositoryFailure.self) {
+            try await viewModel.delete(record)
+        }
+
+        #expect(viewModel.state == .loaded([record]))
+        #expect(viewModel.isDeleting == false)
+    }
+
     @Test("Exposes an error state when loading fails")
     @MainActor
     func exposesLoadingError() async {
@@ -90,6 +121,34 @@ private actor FailingVinylRecordRepository: VinylRecordRepository {
 
     func fetch(id: UUID) async throws -> VinylRecord? {
         throw RepositoryFailure()
+    }
+
+    func add(_ record: VinylRecord) async throws {
+        throw RepositoryFailure()
+    }
+
+    func update(_ record: VinylRecord) async throws {
+        throw RepositoryFailure()
+    }
+
+    func remove(id: UUID) async throws {
+        throw RepositoryFailure()
+    }
+}
+
+private actor RemoveFailingVinylRecordRepository: VinylRecordRepository {
+    let record: VinylRecord
+
+    init(record: VinylRecord) {
+        self.record = record
+    }
+
+    func fetchAll() async throws -> [VinylRecord] {
+        [record]
+    }
+
+    func fetch(id: UUID) async throws -> VinylRecord? {
+        id == record.id ? record : nil
     }
 
     func add(_ record: VinylRecord) async throws {

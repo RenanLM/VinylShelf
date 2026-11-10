@@ -13,6 +13,11 @@ final class VinylCatalogViewModel {
     }
 
     private(set) var state: State = .loading
+    private(set) var recordBeingDeletedID: UUID?
+
+    var isDeleting: Bool {
+        recordBeingDeletedID != nil
+    }
 
     @ObservationIgnored
     private let repository: any VinylRecordRepository
@@ -35,6 +40,16 @@ final class VinylCatalogViewModel {
 
     func add(_ record: VinylRecord) async throws {
         try await repository.add(record)
+        await load()
+    }
+
+    func delete(_ record: VinylRecord) async throws {
+        guard recordBeingDeletedID == nil else { return }
+
+        recordBeingDeletedID = record.id
+        defer { recordBeingDeletedID = nil }
+
+        try await repository.remove(id: record.id)
         await load()
     }
 

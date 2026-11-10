@@ -4,6 +4,9 @@ import VinylShelfCore
 @MainActor
 struct VinylCatalogView: View {
     @State private var isPresentingAddForm = false
+    @State private var recordPendingDeletion: VinylRecord?
+    @State private var isShowingDeleteConfirmation = false
+    @State private var isShowingDeletionError = false
 
     let viewModel: VinylCatalogViewModel
 
@@ -18,6 +21,7 @@ struct VinylCatalogView: View {
                         } label: {
                             Label("Adicionar disco", systemImage: "plus")
                         }
+                        .disabled(viewModel.isDeleting)
                     }
                 }
         }
@@ -28,6 +32,40 @@ struct VinylCatalogView: View {
             AddVinylRecordView { record in
                 try await viewModel.add(record)
             }
+        }
+        .confirmationDialog(
+            "Excluir disco?",
+            isPresented: $isShowingDeleteConfirmation,
+            titleVisibility: .visible,
+            presenting: recordPendingDeletion
+        ) { record in
+            Button("Excluir", role: .destructive) {
+                recordPendingDeletion = nil
+
+                Task {
+                    do {
+                        try await viewModel.delete(record)
+                    } catch {
+                        isShowingDeletionError = true
+                    }
+                }
+            }
+
+            Button("Cancelar", role: .cancel) {
+                recordPendingDeletion = nil
+            }
+        } message: { record in
+            Text(
+                "\(record.title), de \(record.artist), será removido da sua coleção."
+            )
+        }
+        .alert(
+            "Não foi possível excluir",
+            isPresented: $isShowingDeletionError
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("O disco foi mantido na sua coleção. Tente novamente.")
         }
     }
 
@@ -40,6 +78,18 @@ struct VinylCatalogView: View {
         case let .loaded(records):
             List(records) { record in
                 VinylRecordRow(record: record)
+                    .swipeActions(
+                        edge: .trailing,
+                        allowsFullSwipe: false
+                    ) {
+                        Button(role: .destructive) {
+                            recordPendingDeletion = record
+                            isShowingDeleteConfirmation = true
+                        } label: {
+                            Label("Excluir", systemImage: "trash")
+                        }
+                        .disabled(viewModel.isDeleting)
+                    }
             }
 
         case .empty:
