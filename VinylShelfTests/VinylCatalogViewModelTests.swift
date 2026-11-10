@@ -33,6 +33,37 @@ struct VinylCatalogViewModelTests {
         #expect(viewModel.state == .loaded([firstRecord, lastRecord]))
     }
 
+    @Test("Adds a record and reloads the catalog")
+    @MainActor
+    func addsRecordAndReloadsCatalog() async throws {
+        let repository = InMemoryVinylRecordRepository()
+        let viewModel = VinylCatalogViewModel(repository: repository)
+        let record = VinylRecord(
+            title: "Elis & Tom",
+            artist: "Elis Regina & Tom Jobim",
+            releaseYear: 1974,
+            genre: "MPB"
+        )
+
+        try await viewModel.add(record)
+
+        #expect(viewModel.state == .loaded([record]))
+        #expect(try await repository.fetch(id: record.id) == record)
+    }
+
+    @Test("Propagates an error when adding fails")
+    @MainActor
+    func propagatesAddError() async {
+        let viewModel = VinylCatalogViewModel(
+            repository: FailingVinylRecordRepository()
+        )
+        let record = VinylRecord(title: "Transa", artist: "Caetano Veloso")
+
+        await #expect(throws: RepositoryFailure.self) {
+            try await viewModel.add(record)
+        }
+    }
+
     @Test("Exposes an error state when loading fails")
     @MainActor
     func exposesLoadingError() async {

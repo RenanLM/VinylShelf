@@ -33,6 +33,11 @@ final class VinylCatalogViewModel {
         }
     }
 
+    func add(_ record: VinylRecord) async throws {
+        try await repository.add(record)
+        await load()
+    }
+
     private static func precedesByTitle(
         _ firstRecord: VinylRecord,
         _ secondRecord: VinylRecord

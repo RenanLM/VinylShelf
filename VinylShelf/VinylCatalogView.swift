@@ -3,15 +3,31 @@ import VinylShelfCore
 
 @MainActor
 struct VinylCatalogView: View {
+    @State private var isPresentingAddForm = false
+
     let viewModel: VinylCatalogViewModel
 
     var body: some View {
         NavigationStack {
             content
                 .navigationTitle("VinylShelf")
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            isPresentingAddForm = true
+                        } label: {
+                            Label("Adicionar disco", systemImage: "plus")
+                        }
+                    }
+                }
         }
         .task {
             await viewModel.load()
+        }
+        .sheet(isPresented: $isPresentingAddForm) {
+            AddVinylRecordView { record in
+                try await viewModel.add(record)
+            }
         }
     }
 
