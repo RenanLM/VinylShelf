@@ -1,4 +1,5 @@
 import Testing
+import VinylShelfCore
 @testable import VinylShelf
 
 struct VinylRecordFormInputTests {
