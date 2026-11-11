@@ -64,6 +64,64 @@ struct VinylCatalogViewModelTests {
         }
     }
 
+    @Test("Updates a record and reloads the catalog")
+    @MainActor
+    func updatesRecordAndReloadsCatalog() async throws {
+        let originalRecord = VinylRecord(
+            title: "Elis & Tom",
+            artist: "Elis Regina & Tom Jobim"
+        )
+        let updatedRecord = VinylRecord(
+            id: originalRecord.id,
+            title: "Elis & Tom",
+            artist: "Elis Regina & Tom Jobim",
+            releaseYear: 1974,
+            genre: "MPB"
+        )
+        let repository = try InMemoryVinylRecordRepository(
+            records: [originalRecord]
+        )
+        let viewModel = VinylCatalogViewModel(repository: repository)
+        await viewModel.load()
+
+        try await viewModel.update(updatedRecord)
+
+        #expect(viewModel.state == .loaded([updatedRecord]))
+        #expect(viewModel.isUpdating == false)
+        #expect(
+            try await repository.fetch(id: originalRecord.id) == updatedRecord
+        )
+    }
+
+    @Test("Keeps the current catalog when updating fails")
+    @MainActor
+    func keepsCatalogWhenUpdateFails() async {
+        let originalRecord = VinylRecord(
+            title: "Construção",
+            artist: "Chico Buarque"
+        )
+        let updatedRecord = VinylRecord(
+            id: originalRecord.id,
+            title: "Construção",
+            artist: "Chico Buarque",
+            releaseYear: 1971
+        )
+        let repository = UpdateFailingVinylRecordRepository(
+            record: originalRecord
+        )
+        let viewModel = VinylCatalogViewModel(repository: repository)
+        await viewModel.load()
+
+        await #expect(throws: RepositoryFailure.self) {
+            try await viewModel.update(updatedRecord)
+        }
+
+        #expect(viewModel.state == .loaded([originalRecord]))
+        #expect(viewModel.isUpdating == false)
+        let storedRecord = try? await repository.fetch(id: originalRecord.id)
+        #expect(storedRecord == originalRecord)
+    }
+
     @Test("Deletes a record and shows the empty state")
     @MainActor
     func deletesRecordAndShowsEmptyState() async throws {
@@ -137,6 +195,34 @@ private actor FailingVinylRecordRepository: VinylRecordRepository {
 }
 
 private actor RemoveFailingVinylRecordRepository: VinylRecordRepository {
+    let record: VinylRecord
+
+    init(record: VinylRecord) {
+        self.record = record
+    }
+
+    func fetchAll() async throws -> [VinylRecord] {
+        [record]
+    }
+
+    func fetch(id: UUID) async throws -> VinylRecord? {
+        id == record.id ? record : nil
+    }
+
+    func add(_ record: VinylRecord) async throws {
+        throw RepositoryFailure()
+    }
+
+    func update(_ record: VinylRecord) async throws {
+        throw RepositoryFailure()
+    }
+
+    func remove(id: UUID) async throws {
+        throw RepositoryFailure()
+    }
+}
+
+private actor UpdateFailingVinylRecordRepository: VinylRecordRepository {
     let record: VinylRecord
 
     init(record: VinylRecord) {

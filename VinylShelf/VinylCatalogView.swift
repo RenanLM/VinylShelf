@@ -4,6 +4,7 @@ import VinylShelfCore
 @MainActor
 struct VinylCatalogView: View {
     @State private var isPresentingAddForm = false
+    @State private var recordBeingEdited: VinylRecord?
     @State private var recordPendingDeletion: VinylRecord?
     @State private var isShowingDeleteConfirmation = false
     @State private var isShowingDeletionError = false
@@ -21,7 +22,9 @@ struct VinylCatalogView: View {
                         } label: {
                             Label("Adicionar disco", systemImage: "plus")
                         }
-                        .disabled(viewModel.isDeleting)
+                        .disabled(
+                            viewModel.isDeleting || viewModel.isUpdating
+                        )
                     }
                 }
         }
@@ -29,8 +32,13 @@ struct VinylCatalogView: View {
             await viewModel.load()
         }
         .sheet(isPresented: $isPresentingAddForm) {
-            AddVinylRecordView { record in
+            VinylRecordFormView { record in
                 try await viewModel.add(record)
+            }
+        }
+        .sheet(item: $recordBeingEdited) { record in
+            VinylRecordFormView(initialRecord: record) { updatedRecord in
+                try await viewModel.update(updatedRecord)
             }
         }
         .confirmationDialog(
@@ -88,7 +96,19 @@ struct VinylCatalogView: View {
                         } label: {
                             Label("Excluir", systemImage: "trash")
                         }
-                        .disabled(viewModel.isDeleting)
+                        .disabled(
+                            viewModel.isDeleting || viewModel.isUpdating
+                        )
+
+                        Button {
+                            recordBeingEdited = record
+                        } label: {
+                            Label("Editar", systemImage: "pencil")
+                        }
+                        .tint(.blue)
+                        .disabled(
+                            viewModel.isDeleting || viewModel.isUpdating
+                        )
                     }
             }
 

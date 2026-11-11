@@ -2,14 +2,34 @@ import SwiftUI
 import VinylShelfCore
 
 @MainActor
-struct AddVinylRecordView: View {
+struct VinylRecordFormView: View {
     @Environment(\.dismiss) private var dismiss
 
-    @State private var input = VinylRecordFormInput()
+    @State private var input: VinylRecordFormInput
     @State private var isSaving = false
     @State private var errorMessage: String?
 
+    private let recordID: UUID?
+    private let navigationTitle: String
+    private let saveFailureMessage: String
     let onSave: @MainActor (VinylRecord) async throws -> Void
+
+    init(
+        initialRecord: VinylRecord? = nil,
+        onSave: @escaping @MainActor (VinylRecord) async throws -> Void
+    ) {
+        recordID = initialRecord?.id
+        navigationTitle = initialRecord == nil ? "Novo disco" : "Editar disco"
+        saveFailureMessage = initialRecord == nil
+            ? "Não foi possível salvar o disco. Tente novamente."
+            : "Não foi possível atualizar o disco. Tente novamente."
+        self.onSave = onSave
+
+        let initialInput = initialRecord.map {
+            VinylRecordFormInput(record: $0)
+        } ?? VinylRecordFormInput()
+        _input = State(initialValue: initialInput)
+    }
 
     var body: some View {
         NavigationStack {
@@ -40,7 +60,7 @@ struct AddVinylRecordView: View {
                     }
                 }
             }
-            .navigationTitle("Novo disco")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -68,7 +88,7 @@ struct AddVinylRecordView: View {
         errorMessage = nil
 
         do {
-            let record = try input.makeRecord()
+            let record = try input.makeRecord(id: recordID ?? UUID())
             isSaving = true
             defer { isSaving = false }
 
@@ -77,7 +97,7 @@ struct AddVinylRecordView: View {
         } catch let validationError as VinylRecordFormValidationError {
             errorMessage = validationError.message
         } catch {
-            errorMessage = "Não foi possível salvar o disco. Tente novamente."
+            errorMessage = saveFailureMessage
         }
     }
 }

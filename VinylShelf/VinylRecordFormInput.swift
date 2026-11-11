@@ -21,12 +21,32 @@ enum VinylRecordFormValidationError: Error, Equatable, Sendable {
 struct VinylRecordFormInput {
     static let minimumReleaseYear = 1900
 
-    var title = ""
-    var artist = ""
-    var releaseYear = ""
-    var genre = ""
+    var title: String
+    var artist: String
+    var releaseYear: String
+    var genre: String
+
+    init(
+        title: String = "",
+        artist: String = "",
+        releaseYear: String = "",
+        genre: String = ""
+    ) {
+        self.title = title
+        self.artist = artist
+        self.releaseYear = releaseYear
+        self.genre = genre
+    }
+
+    init(record: VinylRecord) {
+        title = record.title
+        artist = record.artist
+        releaseYear = record.releaseYear.map { String($0) } ?? ""
+        genre = record.genre ?? ""
+    }
 
     func makeRecord(
+        id: UUID = UUID(),
         currentYear: Int = Calendar.current.component(.year, from: Date())
     ) throws -> VinylRecord {
         let normalizedTitle = title.trimmingCharacters(
@@ -62,6 +82,7 @@ struct VinylRecordFormInput {
         )
 
         return VinylRecord(
+            id: id,
             title: normalizedTitle,
             artist: normalizedArtist,
             releaseYear: parsedReleaseYear,

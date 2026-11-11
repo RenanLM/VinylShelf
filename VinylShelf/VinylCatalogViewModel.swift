@@ -5,6 +5,10 @@ import VinylShelfCore
 @MainActor
 @Observable
 final class VinylCatalogViewModel {
+    enum OperationError: Error, Equatable, Sendable {
+        case updateAlreadyInProgress
+    }
+
     enum State: Equatable {
         case loading
         case loaded([VinylRecord])
@@ -14,9 +18,14 @@ final class VinylCatalogViewModel {
 
     private(set) var state: State = .loading
     private(set) var recordBeingDeletedID: UUID?
+    private(set) var recordBeingUpdatedID: UUID?
 
     var isDeleting: Bool {
         recordBeingDeletedID != nil
+    }
+
+    var isUpdating: Bool {
+        recordBeingUpdatedID != nil
     }
 
     @ObservationIgnored
@@ -40,6 +49,18 @@ final class VinylCatalogViewModel {
 
     func add(_ record: VinylRecord) async throws {
         try await repository.add(record)
+        await load()
+    }
+
+    func update(_ record: VinylRecord) async throws {
+        guard recordBeingUpdatedID == nil else {
+            throw OperationError.updateAlreadyInProgress
+        }
+
+        recordBeingUpdatedID = record.id
+        defer { recordBeingUpdatedID = nil }
+
+        try await repository.update(record)
         await load()
     }
 

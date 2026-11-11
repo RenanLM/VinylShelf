@@ -2,6 +2,46 @@ import Testing
 @testable import VinylShelf
 
 struct VinylRecordFormInputTests {
+    @Test("Initializes editing input with the record values")
+    func initializesInputForEditing() {
+        let record = VinylRecord(
+            title: "Luz",
+            artist: "Djavan",
+            releaseYear: 1982,
+            genre: "MPB"
+        )
+
+        let input = VinylRecordFormInput(record: record)
+
+        #expect(input.title == "Luz")
+        #expect(input.artist == "Djavan")
+        #expect(input.releaseYear == "1982")
+        #expect(input.genre == "MPB")
+    }
+
+    @Test("Preserves the original UUID when creating an edited record")
+    func preservesOriginalIDWhenEditing() throws {
+        let originalRecord = VinylRecord(
+            title: "Luz",
+            artist: "Djavan",
+            releaseYear: 1982
+        )
+        let input = VinylRecordFormInput(
+            title: "  Luz  ",
+            artist: "  Djavan  ",
+            releaseYear: "1982",
+            genre: "  MPB  "
+        )
+
+        let editedRecord = try input.makeRecord(
+            id: originalRecord.id,
+            currentYear: 2026
+        )
+
+        #expect(editedRecord.id == originalRecord.id)
+        #expect(editedRecord.genre == "MPB")
+    }
+
     @Test("Creates a normalized record from valid input")
     func createsNormalizedRecord() throws {
         let input = VinylRecordFormInput(
