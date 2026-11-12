@@ -1,0 +1,47 @@
+{
+  "created": "2026-11-12T12:00:00.000Z",
+  "count": 2,
+  "offset": 0,
+  "release-groups": [
+    {
+      "id": "1f3d6d8e-2f8f-4e44-9734-9ad7c0c3f507",
+      "score": 100,
+      "title": "Kind of Blue",
+      "first-release-date": "1959-08-17",
+      "primary-type": "Album",
+      "artist-credit": [
+        {
+          "name": "Miles Davis",
+          "artist": {
+            "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+            "name": "Miles Davis"
+          }
+        }
+      ]
+    },
+    {
+      "id": "c6f6d3be-3f90-4c58-86ba-982fbb09ad04",
+      "score": 98,
+      "title": "Clube da Esquina",
+      "first-release-date": "1972",
+      "primary-type": "Album",
+      "artist-credit": [
+        {
+          "name": "Milton Nascimento",
+          "joinphrase": " & ",
+          "artist": {
+            "id": "32b3a03a-6f7a-42c2-9829-b41585d5a29b",
+            "name": "Milton Nascimento"
+          }
+        },
+        {
+          "name": "Lô Borges",
+          "artist": {
+            "id": "f9fe9637-a2c3-4840-9fdf-92f61b386d68",
+            "name": "Lô Borges"
+          }
+        }
+      ]
+    }
+  ]
+}

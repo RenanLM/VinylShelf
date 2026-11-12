@@ -28,6 +28,9 @@ let package = Package(
         .testTarget(
             name: "VinylShelfCoreTests",
             dependencies: ["VinylShelfCore"],
+            resources: [
+                .process("Fixtures"),
+            ],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
             ],

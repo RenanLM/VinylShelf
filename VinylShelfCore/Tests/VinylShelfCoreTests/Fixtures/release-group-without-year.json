@@ -1,0 +1,16 @@
+{
+  "count": 1,
+  "offset": 0,
+  "release-groups": [
+    {
+      "id": "a87b1d51-00de-4596-a05b-e17be2d1f585",
+      "title": "No Date Album",
+      "primary-type": "Album",
+      "artist-credit": [
+        {
+          "name": "Unknown Artist"
+        }
+      ]
+    }
+  ]
+}
