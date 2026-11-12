@@ -17,6 +17,7 @@ struct VinylCatalogView: View {
                 .navigationTitle("VinylShelf")
                 .searchable(
                     text: $viewModel.searchText,
+                    placement: .navigationBarDrawer(displayMode: .always),
                     prompt: "Buscar por título ou artista"
                 )
                 .navigationDestination(for: VinylRecord.ID.self) { recordID in
@@ -135,6 +136,7 @@ struct VinylCatalogView: View {
                         )
                     }
                 }
+                .listStyle(.plain)
                 .onAppear {
                     ScreenshotDemoConfiguration.signalCatalogReady()
                 }
@@ -178,7 +180,7 @@ private struct VinylRecordRow: View {
     let record: VinylRecord
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.secondary.opacity(0.15))
@@ -188,7 +190,7 @@ private struct VinylRecordRow: View {
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
             }
-            .frame(width: 64, height: 64)
+            .frame(width: 56, height: 56)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(record.title)

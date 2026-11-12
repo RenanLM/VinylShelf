@@ -44,26 +44,22 @@ enum ScreenshotDemoConfiguration {
     static func signalCatalogReady() {
         guard isEnabled else { return }
 
-        Task { @MainActor in
-            await Task.yield()
+        guard let cachesDirectory = FileManager.default.urls(
+            for: .cachesDirectory,
+            in: .userDomainMask
+        ).first else { return }
 
-            guard let cachesDirectory = FileManager.default.urls(
-                for: .cachesDirectory,
-                in: .userDomainMask
-            ).first else { return }
+        let readinessFile = cachesDirectory.appendingPathComponent(
+            readinessFileName
+        )
 
-            let readinessFile = cachesDirectory.appendingPathComponent(
-                readinessFileName
+        do {
+            try Data("ready".utf8).write(
+                to: readinessFile,
+                options: .atomic
             )
-
-            do {
-                try Data("ready".utf8).write(
-                    to: readinessFile,
-                    options: .atomic
-                )
-            } catch {
-                print("Unable to signal screenshot readiness: \(error)")
-            }
+        } catch {
+            print("Unable to signal screenshot readiness: \(error)")
         }
     }
 #else

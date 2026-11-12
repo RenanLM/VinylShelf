@@ -67,12 +67,33 @@ jobs:
           xcrun simctl boot "$SIMULATOR_UDID"
           xcrun simctl bootstatus "$SIMULATOR_UDID" -b
 
+          if ! xcrun simctl ui "$SIMULATOR_UDID" appearance light; then
+            echo "::warning::Unable to force light appearance on this runtime."
+          fi
+
+          if ! xcrun simctl status_bar \
+            "$SIMULATOR_UDID" \
+            override \
+            --time "9:41" \
+            --wifiMode active \
+            --wifiBars 3 \
+            --cellularMode active \
+            --cellularBars 4 \
+            --batteryState charged \
+            --batteryLevel 100; then
+            echo "::warning::Unable to standardize the simulator status bar."
+          fi
+
       - name: Install, launch, and capture catalog
         run: |
           set -euo pipefail
 
           APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/VinylShelf.app"
           test -d "$APP_PATH"
+
+          xcrun swiftc \
+            .github/scripts/validate-screenshot.swift \
+            -o "$RUNNER_TEMP/validate-screenshot"
 
           xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
 
@@ -107,12 +128,44 @@ jobs:
             exit 1
           fi
 
-          mkdir -p "$SCREENSHOT_DIRECTORY"
-          xcrun simctl io \
+          xcrun simctl launch \
             "$SIMULATOR_UDID" \
-            screenshot \
-            "$SCREENSHOT_DIRECTORY/vinylshelf-catalog.png"
-          test -s "$SCREENSHOT_DIRECTORY/vinylshelf-catalog.png"
+            "$BUNDLE_IDENTIFIER" \
+            --screenshot-demo \
+            > /dev/null
+
+          echo "Catalog is ready; waiting 3 seconds for visual stabilization."
+          sleep 3
+
+          mkdir -p "$SCREENSHOT_DIRECTORY"
+          FINAL_SCREENSHOT="$SCREENSHOT_DIRECTORY/vinylshelf-catalog.png"
+          SCREENSHOT_VALID=false
+
+          for attempt in {1..3}; do
+            CANDIDATE_SCREENSHOT="$RUNNER_TEMP/vinylshelf-catalog-attempt-$attempt.png"
+
+            xcrun simctl io \
+              "$SIMULATOR_UDID" \
+              screenshot \
+              "$CANDIDATE_SCREENSHOT"
+
+            if "$RUNNER_TEMP/validate-screenshot" "$CANDIDATE_SCREENSHOT"; then
+              mv "$CANDIDATE_SCREENSHOT" "$FINAL_SCREENSHOT"
+              SCREENSHOT_VALID=true
+              echo "Screenshot accepted on attempt $attempt."
+              break
+            fi
+
+            echo "Screenshot attempt $attempt was rejected; waiting before retry."
+            sleep 2
+          done
+
+          if [[ "$SCREENSHOT_VALID" != "true" ]]; then
+            echo "No screenshot passed visual validation."
+            exit 1
+          fi
+
+          test -s "$FINAL_SCREENSHOT"
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
