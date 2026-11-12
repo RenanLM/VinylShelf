@@ -8,7 +8,7 @@ permissions:
 
 env:
   BUNDLE_IDENTIFIER: com.renan.VinylShelf
-  DERIVED_DATA_PATH: ${{ runner.temp }}/VinylShelfScreenshotDerivedData
+  DERIVED_DATA_PATH: ${{ github.workspace }}/VinylShelfScreenshotDerivedData
   SCREENSHOT_DIRECTORY: ${{ github.workspace }}/screenshots
 
 jobs:
