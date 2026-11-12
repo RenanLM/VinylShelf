@@ -19,6 +19,9 @@ struct VinylCatalogView: View {
                     text: $viewModel.searchText,
                     prompt: "Buscar por título ou artista"
                 )
+                .navigationDestination(for: VinylRecord.ID.self) { recordID in
+                    detailDestination(for: recordID)
+                }
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button {
@@ -104,31 +107,33 @@ struct VinylCatalogView: View {
                 }
             } else {
                 List(viewModel.filteredRecords) { record in
-                    VinylRecordRow(record: record)
-                        .swipeActions(
-                            edge: .trailing,
-                            allowsFullSwipe: false
-                        ) {
-                            Button(role: .destructive) {
-                                recordPendingDeletion = record
-                                isShowingDeleteConfirmation = true
-                            } label: {
-                                Label("Excluir", systemImage: "trash")
-                            }
-                            .disabled(
-                                viewModel.isDeleting || viewModel.isUpdating
-                            )
-
-                            Button {
-                                recordBeingEdited = record
-                            } label: {
-                                Label("Editar", systemImage: "pencil")
-                            }
-                            .tint(.blue)
-                            .disabled(
-                                viewModel.isDeleting || viewModel.isUpdating
-                            )
+                    NavigationLink(value: record.id) {
+                        VinylRecordRow(record: record)
+                    }
+                    .swipeActions(
+                        edge: .trailing,
+                        allowsFullSwipe: false
+                    ) {
+                        Button(role: .destructive) {
+                            recordPendingDeletion = record
+                            isShowingDeleteConfirmation = true
+                        } label: {
+                            Label("Excluir", systemImage: "trash")
                         }
+                        .disabled(
+                            viewModel.isDeleting || viewModel.isUpdating
+                        )
+
+                        Button {
+                            recordBeingEdited = record
+                        } label: {
+                            Label("Editar", systemImage: "pencil")
+                        }
+                        .tint(.blue)
+                        .disabled(
+                            viewModel.isDeleting || viewModel.isUpdating
+                        )
+                    }
                 }
             }
 
@@ -144,6 +149,23 @@ struct VinylCatalogView: View {
                 "Não foi possível carregar",
                 systemImage: "exclamationmark.triangle",
                 description: Text(message)
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func detailDestination(
+        for recordID: VinylRecord.ID
+    ) -> some View {
+        if let record = viewModel.record(id: recordID) {
+            VinylRecordDetailView(record: record)
+        } else {
+            ContentUnavailableView(
+                "Disco indisponível",
+                systemImage: "opticaldisc",
+                description: Text(
+                    "Este disco não está mais disponível na coleção."
+                )
             )
         }
     }

@@ -35,6 +35,18 @@ struct VinylCatalogViewModelTests {
         #expect(viewModel.state == .loaded([firstRecord, lastRecord]))
     }
 
+    @Test("Finds a loaded record by its identifier")
+    @MainActor
+    func findsLoadedRecordByID() async throws {
+        let record = VinylRecord(title: "Luz", artist: "Djavan")
+        let repository = try InMemoryVinylRecordRepository(records: [record])
+        let viewModel = VinylCatalogViewModel(repository: repository)
+        await viewModel.load()
+
+        #expect(viewModel.record(id: record.id) == record)
+        #expect(viewModel.record(id: UUID()) == nil)
+    }
+
     @Test("Exposes no-results state for a loaded catalog search")
     @MainActor
     func exposesNoSearchResults() async throws {
@@ -107,6 +119,7 @@ struct VinylCatalogViewModelTests {
         #expect(
             try await repository.fetch(id: originalRecord.id) == updatedRecord
         )
+        #expect(viewModel.record(id: originalRecord.id) == updatedRecord)
     }
 
     @Test("Keeps the current catalog when updating fails")

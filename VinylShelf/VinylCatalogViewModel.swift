@@ -62,6 +62,12 @@ final class VinylCatalogViewModel {
         }
     }
 
+    func record(id: VinylRecord.ID) -> VinylRecord? {
+        guard case let .loaded(records) = state else { return nil }
+
+        return records.first { $0.id == id }
+    }
+
     func add(_ record: VinylRecord) async throws {
         try await repository.add(record)
         await load()
