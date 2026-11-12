@@ -10,6 +10,7 @@ struct VinylCatalogView: View {
     @State private var isShowingDeletionError = false
 
     @Bindable var viewModel: VinylCatalogViewModel
+    let albumSearcher: any MusicBrainzAlbumSearching
 
     var body: some View {
         NavigationStack {
@@ -40,7 +41,7 @@ struct VinylCatalogView: View {
             await viewModel.load()
         }
         .sheet(isPresented: $isPresentingAddForm) {
-            VinylRecordFormView { record in
+            VinylRecordFormView(albumSearcher: albumSearcher) { record in
                 try await viewModel.add(record)
             }
         }

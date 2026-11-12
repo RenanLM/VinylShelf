@@ -20,6 +20,46 @@ struct VinylRecordFormInputTests {
         #expect(input.genre == "MPB")
     }
 
+    @Test("Applies a MusicBrainz result to the editable fields")
+    func appliesMusicBrainzResult() {
+        var input = VinylRecordFormInput(genre: "Jazz")
+        let result = MusicBrainzAlbumSearchResult(
+            releaseGroupID: "release-group-id",
+            title: "Kind of Blue",
+            artist: "Miles Davis",
+            releaseYear: 1959
+        )
+
+        input.apply(result)
+
+        #expect(input.title == "Kind of Blue")
+        #expect(input.artist == "Miles Davis")
+        #expect(input.releaseYear == "1959")
+        #expect(input.genre == "Jazz")
+    }
+
+    @Test("Clears unavailable MusicBrainz fields without changing genre")
+    func appliesMusicBrainzResultWithMissingValues() {
+        var input = VinylRecordFormInput(
+            artist: "Previous Artist",
+            releaseYear: "2000",
+            genre: "Rock"
+        )
+        let result = MusicBrainzAlbumSearchResult(
+            releaseGroupID: "release-group-id",
+            title: "Unknown Album",
+            artist: nil,
+            releaseYear: nil
+        )
+
+        input.apply(result)
+
+        #expect(input.title == "Unknown Album")
+        #expect(input.artist.isEmpty)
+        #expect(input.releaseYear.isEmpty)
+        #expect(input.genre == "Rock")
+    }
+
     @Test("Preserves the original UUID when creating an edited record")
     func preservesOriginalIDWhenEditing() throws {
         let originalRecord = VinylRecord(

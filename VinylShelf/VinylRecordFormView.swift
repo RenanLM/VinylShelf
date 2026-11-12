@@ -8,14 +8,17 @@ struct VinylRecordFormView: View {
     @State private var input: VinylRecordFormInput
     @State private var isSaving = false
     @State private var errorMessage: String?
+    @State private var isPresentingAlbumSearch = false
 
     private let recordID: UUID?
     private let navigationTitle: String
     private let saveFailureMessage: String
+    private let albumSearcher: (any MusicBrainzAlbumSearching)?
     let onSave: @MainActor (VinylRecord) async throws -> Void
 
     init(
         initialRecord: VinylRecord? = nil,
+        albumSearcher: (any MusicBrainzAlbumSearching)? = nil,
         onSave: @escaping @MainActor (VinylRecord) async throws -> Void
     ) {
         recordID = initialRecord?.id
@@ -23,6 +26,7 @@ struct VinylRecordFormView: View {
         saveFailureMessage = initialRecord == nil
             ? "Não foi possível salvar o disco. Tente novamente."
             : "Não foi possível atualizar o disco. Tente novamente."
+        self.albumSearcher = initialRecord == nil ? albumSearcher : nil
         self.onSave = onSave
 
         let initialInput = initialRecord.map {
@@ -34,6 +38,19 @@ struct VinylRecordFormView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if albumSearcher != nil {
+                    Section {
+                        Button {
+                            isPresentingAlbumSearch = true
+                        } label: {
+                            Label(
+                                "Buscar álbum no MusicBrainz",
+                                systemImage: "magnifyingglass"
+                            )
+                        }
+                    }
+                }
+
                 Section("Disco") {
                     TextField("Título", text: $input.title)
                         .textInputAutocapitalization(.words)
@@ -80,6 +97,15 @@ struct VinylRecordFormView: View {
                 }
             }
             .interactiveDismissDisabled(isSaving)
+        }
+        .sheet(isPresented: $isPresentingAlbumSearch) {
+            if let albumSearcher {
+                MusicBrainzAlbumSearchView(
+                    albumSearcher: albumSearcher
+                ) { result in
+                    input.apply(result)
+                }
+            }
         }
     }
 

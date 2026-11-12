@@ -6,9 +6,12 @@ import VinylShelfCore
 @MainActor
 struct VinylShelfApp: App {
     private let modelContainer: ModelContainer
+    private let albumSearcher: any MusicBrainzAlbumSearching
     @State private var viewModel: VinylCatalogViewModel
 
     init() {
+        albumSearcher = MusicBrainzClient()
+
         do {
             let isScreenshotDemoEnabled = ScreenshotDemoConfiguration.isEnabled
             let modelContainer: ModelContainer
@@ -45,7 +48,10 @@ struct VinylShelfApp: App {
 
     var body: some Scene {
         WindowGroup {
-            VinylCatalogView(viewModel: viewModel)
+            VinylCatalogView(
+                viewModel: viewModel,
+                albumSearcher: albumSearcher
+            )
                 .modelContainer(modelContainer)
         }
     }

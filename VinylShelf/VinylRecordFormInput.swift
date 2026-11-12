@@ -45,6 +45,12 @@ struct VinylRecordFormInput {
         genre = record.genre ?? ""
     }
 
+    mutating func apply(_ result: MusicBrainzAlbumSearchResult) {
+        title = result.title
+        artist = result.artist ?? ""
+        releaseYear = result.releaseYear.map { String($0) } ?? ""
+    }
+
     func makeRecord(
         id: UUID = UUID(),
         currentYear: Int = Calendar.current.component(.year, from: Date())
