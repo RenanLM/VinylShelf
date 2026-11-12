@@ -17,8 +17,23 @@ final class VinylCatalogViewModel {
     }
 
     private(set) var state: State = .loading
+    var searchText = ""
     private(set) var recordBeingDeletedID: UUID?
     private(set) var recordBeingUpdatedID: UUID?
+
+    var filteredRecords: [VinylRecord] {
+        guard case let .loaded(records) = state else { return [] }
+
+        return VinylRecordFilter.filter(records, matching: searchText)
+    }
+
+    var hasNoSearchResults: Bool {
+        guard case .loaded = state else { return false }
+
+        return !searchText.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ).isEmpty && filteredRecords.isEmpty
+    }
 
     var isDeleting: Bool {
         recordBeingDeletedID != nil

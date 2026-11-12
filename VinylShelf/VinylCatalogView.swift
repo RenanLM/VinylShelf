@@ -9,12 +9,16 @@ struct VinylCatalogView: View {
     @State private var isShowingDeleteConfirmation = false
     @State private var isShowingDeletionError = false
 
-    let viewModel: VinylCatalogViewModel
+    @Bindable var viewModel: VinylCatalogViewModel
 
     var body: some View {
         NavigationStack {
             content
                 .navigationTitle("VinylShelf")
+                .searchable(
+                    text: $viewModel.searchText,
+                    prompt: "Buscar por título ou artista"
+                )
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button {
@@ -83,33 +87,49 @@ struct VinylCatalogView: View {
         case .loading:
             ProgressView("Carregando coleção...")
 
-        case let .loaded(records):
-            List(records) { record in
-                VinylRecordRow(record: record)
-                    .swipeActions(
-                        edge: .trailing,
-                        allowsFullSwipe: false
-                    ) {
-                        Button(role: .destructive) {
-                            recordPendingDeletion = record
-                            isShowingDeleteConfirmation = true
-                        } label: {
-                            Label("Excluir", systemImage: "trash")
-                        }
-                        .disabled(
-                            viewModel.isDeleting || viewModel.isUpdating
-                        )
-
-                        Button {
-                            recordBeingEdited = record
-                        } label: {
-                            Label("Editar", systemImage: "pencil")
-                        }
-                        .tint(.blue)
-                        .disabled(
-                            viewModel.isDeleting || viewModel.isUpdating
-                        )
+        case .loaded:
+            if viewModel.hasNoSearchResults {
+                ContentUnavailableView {
+                    Label(
+                        "Nenhum disco encontrado",
+                        systemImage: "magnifyingglass"
+                    )
+                } description: {
+                    Text("Tente buscar por outro título ou artista.")
+                } actions: {
+                    Button("Limpar busca") {
+                        viewModel.searchText = ""
                     }
+                    .buttonStyle(.bordered)
+                }
+            } else {
+                List(viewModel.filteredRecords) { record in
+                    VinylRecordRow(record: record)
+                        .swipeActions(
+                            edge: .trailing,
+                            allowsFullSwipe: false
+                        ) {
+                            Button(role: .destructive) {
+                                recordPendingDeletion = record
+                                isShowingDeleteConfirmation = true
+                            } label: {
+                                Label("Excluir", systemImage: "trash")
+                            }
+                            .disabled(
+                                viewModel.isDeleting || viewModel.isUpdating
+                            )
+
+                            Button {
+                                recordBeingEdited = record
+                            } label: {
+                                Label("Editar", systemImage: "pencil")
+                            }
+                            .tint(.blue)
+                            .disabled(
+                                viewModel.isDeleting || viewModel.isUpdating
+                            )
+                        }
+                }
             }
 
         case .empty:

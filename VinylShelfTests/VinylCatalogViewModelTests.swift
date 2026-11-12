@@ -16,6 +16,8 @@ struct VinylCatalogViewModelTests {
         await viewModel.load()
 
         #expect(viewModel.state == .empty)
+        viewModel.searchText = "qualquer disco"
+        #expect(viewModel.hasNoSearchResults == false)
     }
 
     @Test("Loads records ordered by title")
@@ -31,6 +33,20 @@ struct VinylCatalogViewModelTests {
         await viewModel.load()
 
         #expect(viewModel.state == .loaded([firstRecord, lastRecord]))
+    }
+
+    @Test("Exposes no-results state for a loaded catalog search")
+    @MainActor
+    func exposesNoSearchResults() async throws {
+        let record = VinylRecord(title: "Luz", artist: "Djavan")
+        let repository = try InMemoryVinylRecordRepository(records: [record])
+        let viewModel = VinylCatalogViewModel(repository: repository)
+        await viewModel.load()
+
+        viewModel.searchText = "The Beatles"
+
+        #expect(viewModel.filteredRecords.isEmpty)
+        #expect(viewModel.hasNoSearchResults)
     }
 
     @Test("Adds a record and reloads the catalog")
