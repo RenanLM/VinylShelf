@@ -135,6 +135,9 @@ struct VinylCatalogView: View {
                         )
                     }
                 }
+                .onAppear {
+                    ScreenshotDemoConfiguration.signalCatalogReady()
+                }
             }
 
         case .empty:
