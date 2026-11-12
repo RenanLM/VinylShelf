@@ -92,6 +92,7 @@ jobs:
           test -d "$APP_PATH"
 
           xcrun swiftc \
+            -parse-as-library \
             .github/scripts/validate-screenshot.swift \
             -o "$RUNNER_TEMP/validate-screenshot"
 
