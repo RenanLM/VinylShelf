@@ -38,6 +38,20 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Verify generated launch screen
+        run: |
+          set -euo pipefail
+
+          APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/VinylShelf.app"
+          INFO_PLIST="$APP_PATH/Info.plist"
+
+          test -f "$INFO_PLIST"
+
+          if ! /usr/libexec/PlistBuddy -c "Print :UILaunchScreen" "$INFO_PLIST"; then
+            echo "The compiled app is missing the UILaunchScreen Info.plist key."
+            exit 1
+          fi
+
       - name: Create and boot simulator
         run: |
           set -euo pipefail
