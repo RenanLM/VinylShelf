@@ -25,6 +25,9 @@ logic, persistence, and presentation concerns clearly separated.
 - Delete records through swipe actions and a confirmation dialog.
 - Search the loaded collection by title or artist, ignoring letter case and
   diacritics.
+- Search MusicBrainz release groups by album title from the add-record form.
+- Select a MusicBrainz result to prefill title, artist, and release year,
+  while keeping review and saving under the user's control.
 - Open a read-only detail screen for each record.
 - Persist the collection locally with SwiftData.
 - Handle loading, empty collection, no search results, and repository error
@@ -38,6 +41,7 @@ logic, persistence, and presentation concerns clearly separated.
 | Language | Swift 6 |
 | User interface | SwiftUI, Observation (`@Observable`) |
 | Persistence | SwiftData |
+| Networking | URLSession, URLComponents, Codable |
 | Concurrency | async/await, actors, `@MainActor`, `@ModelActor` |
 | Testing | Swift Testing |
 | Package management | Swift Package Manager |
@@ -54,15 +58,19 @@ data access.
 
 ```mermaid
 flowchart LR
-    View[SwiftUI Views] --> ViewModel[VinylCatalogViewModel]
-    ViewModel --> Repository[VinylRecordRepository]
-    ViewModel --> Domain[VinylRecord]
+    Views[SwiftUI Views] --> CatalogViewModel[VinylCatalogViewModel]
+    CatalogViewModel --> Repository[VinylRecordRepository]
+    CatalogViewModel --> Domain[VinylRecord]
     SwiftDataRepository[SwiftDataVinylRecordRepository] -.-> Repository
     MemoryRepository[InMemoryVinylRecordRepository] -.-> Repository
     SwiftDataRepository --> Entity[VinylRecordEntity]
     SwiftDataRepository --> Domain
     MemoryRepository --> Domain
     Entity --> Store[(SwiftData store)]
+    Views --> SearchViewModel[MusicBrainzAlbumSearchViewModel]
+    SearchViewModel --> AlbumSearch[MusicBrainzAlbumSearching]
+    MusicBrainzClient -.-> AlbumSearch
+    MusicBrainzClient --> MusicBrainzAPI[(MusicBrainz API)]
 ```
 
 - **Views** render screen state and own presentation concerns such as sheets,
@@ -78,6 +86,11 @@ flowchart LR
   `@ModelActor` keeps SwiftData context access isolated.
 - **`InMemoryVinylRecordRepository`** is an actor-based implementation used by
   unit tests and the deterministic screenshot mode.
+- **`MusicBrainzAlbumSearchViewModel`** owns remote-search UI state, cancels
+  superseded tasks, and rejects responses from older search generations.
+- **`MusicBrainzClient`** implements the injected album-search contract with
+  URLSession, JSON decoding, an identifiable User-Agent, and a shared request
+  rate limiter.
 
 ### Domain and persistence models
 
@@ -92,14 +105,26 @@ This separation prevents storage details from leaking into business logic and
 allows repository implementations to change without changing the catalog or
 its ViewModel.
 
+### External album search
+
+The MusicBrainz integration is independent of `VinylRecordRepository` and
+SwiftData. The client searches album release groups and maps the external JSON
+to `MusicBrainzAlbumSearchResult`. Selecting a result only copies available
+title, artist, and year values into the existing form; it does not create a
+record or write to persistence. The user can review and edit the values before
+the normal save flow creates a `VinylRecord`.
+
+A MusicBrainz release group represents the general concept of a musical
+release, not a specific physical vinyl pressing.
+
 ## Project structure
 
 ```text
 .
-├── VinylShelf/                         # SwiftUI application and iOS persistence
+├── VinylShelf/                         # SwiftUI app, ViewModels, and iOS persistence
 ├── VinylShelfCore/
-│   ├── Sources/VinylShelfCore/         # Domain models, repository contract, filtering
-│   └── Tests/VinylShelfCoreTests/      # Cross-platform unit tests
+│   ├── Sources/VinylShelfCore/         # Domain, repositories, filtering, HTTP client
+│   └── Tests/VinylShelfCoreTests/      # Cross-platform tests and JSON fixtures
 ├── VinylShelfTests/                    # ViewModel, form, and SwiftData repository tests
 ├── .github/
 │   ├── workflows/
@@ -158,6 +183,8 @@ The package tests cover:
 - In-memory repository CRUD behavior and repository-specific errors.
 - Title and artist filtering, including case- and diacritic-insensitive
   matching.
+- MusicBrainz URL construction, JSON decoding, optional fields, network and
+  HTTP errors, and empty responses using mocks and JSON fixtures.
 
 Run them from the repository root on macOS:
 
@@ -180,7 +207,12 @@ The `VinylShelfTests` target covers:
 
 - ViewModel loading, sorting, CRUD coordination, and error states.
 - Form validation, input normalization, and UUID preservation during edits.
+- MusicBrainz search states, explicit submission, cancellation, stale-response
+  protection, and assisted form filling.
 - SwiftData repository CRUD behavior using an in-memory `ModelContainer`.
+
+Automated tests use injected fakes and local fixtures; they do not call the
+live MusicBrainz service.
 
 Run the iOS tests on macOS after generating the project:
 
@@ -240,13 +272,22 @@ of this README was produced by this simulator workflow and then added to
 - **Separate domain and persistence models:** the domain remains independent
   of SwiftData and reusable outside the iOS target.
 - **Protocol-based dependency injection:** the ViewModel accepts any
-  `VinylRecordRepository`, which keeps persistence replaceable and tests
-  deterministic.
+  `VinylRecordRepository`, and remote search depends on
+  `MusicBrainzAlbumSearching`. This keeps persistence and networking
+  replaceable while making tests deterministic.
 - **Actor isolation:** the in-memory repository is an actor, the SwiftData
   repository uses `@ModelActor`, and UI state is isolated with `@MainActor`.
 - **In-memory search:** filtering runs over already loaded records, avoiding a
   persistence query for every character entered while keeping the current
   collection size and feature scope simple.
+- **Isolated external integration:** MusicBrainz uses URLSession and Codable in
+  `VinylShelfCore`, without access to SwiftData or the CRUD repository.
+- **Explicit remote requests:** album searches run only after user submission.
+  A shared actor enforces request spacing, while task cancellation and search
+  generations prevent stale responses from replacing newer results.
+- **Assisted, manual import:** selecting external metadata only prefills the
+  form. Missing values stay empty, and persistence still requires review and
+  an explicit save action.
 - **Incremental delivery:** domain, repositories, persistence, CRUD, search,
   navigation, and tooling were introduced as focused increments with tests
   where behavior was testable.
@@ -257,7 +298,7 @@ of this README was produced by this simulator workflow and then added to
 
 The following ideas are not implemented yet:
 
-- Search an external music catalog API for album metadata.
+- Add pagination and richer query controls to MusicBrainz search.
 - Download, cache, and display album artwork.
 - Add configurable sorting and filtering options.
 - Expand record metadata, such as label, catalog number, format, or condition.

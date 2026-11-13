@@ -23,7 +23,6 @@ final class MusicBrainzAlbumSearchViewModel {
 
     var searchText = ""
     private(set) var state: State = .idle
-    private(set) var selectedResult: MusicBrainzAlbumSearchResult?
 
     var canSearch: Bool {
         !searchText.trimmingCharacters(
@@ -90,10 +89,6 @@ final class MusicBrainzAlbumSearchViewModel {
                 searchTask = nil
             }
         }
-    }
-
-    func select(_ result: MusicBrainzAlbumSearchResult) {
-        selectedResult = result
     }
 
     func cancelSearch() {

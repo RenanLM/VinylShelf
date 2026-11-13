@@ -79,7 +79,6 @@ struct MusicBrainzAlbumSearchView: View {
                 Section {
                     ForEach(results, id: \.releaseGroupID) { result in
                         Button {
-                            viewModel.select(result)
                             onSelect(result)
                             dismiss()
                         } label: {

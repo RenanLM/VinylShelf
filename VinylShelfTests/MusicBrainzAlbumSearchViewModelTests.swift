@@ -1,4 +1,3 @@
-import Foundation
 import Testing
 import VinylShelfCore
 @testable import VinylShelf
@@ -77,21 +76,6 @@ struct MusicBrainzAlbumSearchViewModelTests {
                 )
             }
         )
-    }
-
-    @Test("Stores the selected album result")
-    @MainActor
-    func selectsResult() {
-        let viewModel = MusicBrainzAlbumSearchViewModel(
-            albumSearcher: StubMusicBrainzAlbumSearcher(
-                behavior: .success([])
-            )
-        )
-        let result = makeResult(title: "Clube da Esquina")
-
-        viewModel.select(result)
-
-        #expect(viewModel.selectedResult == result)
     }
 
     @Test("Ignores an older response after a newer search")
